@@ -62,41 +62,70 @@ if st.button("Analyze Job"):
 
         cleaned = clean_text(job_description)
 
-        vectorized = tfidf.transform([cleaned])
-
-        prediction = model.predict(vectorized)[0]
-
-        probability = model.predict_proba(vectorized)[0][1]
-
-        st.subheader("📊 Detection Result")
-
-        if prediction == 1:
-            st.error("⚠️ Potential Fake Job Detected!")
+        if not cleaned:
+            st.warning("Please enter a valid job description.")
         else:
-            st.success("✅ Likely Genuine Job")
+            vectorized = tfidf.transform([cleaned])
 
-        st.metric(
-            "Estimated Fraud Risk",
-            f"{probability * 100:.2f}%"
-        )
+            prediction = model.predict(vectorized)[0]
+            probability = model.predict_proba(vectorized)[0][1]
 
-        # Scam Keyword Analysis
-        st.subheader("🚨 Scam Keyword Analysis")
+            st.subheader("📊 Detection Result")
 
-        found_keywords = detect_scam_keywords(job_description)
+            if prediction == 1:
+                st.error("⚠️ Potential Fake Job Detected!")
+            else:
+                st.success("✅ Likely Genuine Job")
 
-        if found_keywords:
-            st.warning("Suspicious keywords detected!")
+            st.metric(
+                "Estimated Fraud Risk",
+                f"{probability * 100:.2f}%"
+            )
 
-            for keyword in found_keywords:
-                st.write("⚠️", keyword)
-        else:
-            st.success("No listed scam keywords detected.")
+            # Scam Keyword Analysis
+            st.subheader("🚨 Scam Keyword Analysis")
 
-        st.caption(
-            "This result is an ML-based estimate, not a guarantee. "
-            "Always verify the employer independently."
-        )
+            found_keywords = detect_scam_keywords(job_description)
+
+            if found_keywords:
+                st.warning("Suspicious keywords detected!")
+                for keyword in found_keywords:
+                    st.write("⚠️", keyword)
+            else:
+                st.success("No listed scam keywords detected.")
+
+            st.caption(
+                "This is an ML-based estimate, not a guarantee. "
+                "Always verify the employer independently."
+            )
+
+            # Downloadable Report
+            report = f"""
+FAKE JOB & INTERNSHIP DETECTION REPORT
+
+Detection Result:
+{"Potential Fake Job" if prediction == 1 else "Likely Genuine Job"}
+
+Estimated Fraud Risk:
+{probability * 100:.2f}%
+
+Suspicious Keywords:
+{", ".join(found_keywords) if found_keywords else "No listed keywords found"}
+
+Job Description:
+{job_description}
+
+Note:
+This is an ML-based estimate, not a guarantee.
+Please verify the employer independently.
+"""
+
+            st.download_button(
+                label="📥 Download Analysis Report",
+                data=report,
+                file_name="Job_Analysis_Report.txt",
+                mime="text/plain"
+            )
 
     else:
         st.warning("Please enter a job description.")
